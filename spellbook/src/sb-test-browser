@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var path = require('path');
+var log = require('./utils/log');
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Promise = require('bluebird');
+var KarmaServer = require('karma').Server;
+var Watch = require('./utils/watch');
+var debounce = require('lodash.debounce');
+var findBrowser = require('./utils/karma-config/find-browser');
+var GetKarmaConfig = require('./utils/get-karma-config');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'keep the tester running and run as things change')
+    .option('-b, --browsers <list,of,browsers>', 'comma seperated list of browsers to run on')
+    .option('-nb, --no-build', 'dont build before testing')
+    .option('-p, --port <port>', 'port for karma server')
+    .option('-nl, --no-lint', 'dont lint before testing');
+});
+
+program.port = program.port || process.env.TEST_PORT || 9876;
+
+process.env.TEST_PORT = program.port;
+
+// support various configurations
+var karmaConfig = GetKarmaConfig(program, config);
+
+var buildPromise = Promise.resolve();
+if (program.build && !program.watch) {
+  buildPromise = Run.one('sb-build');
+}
+
+buildPromise.then(function() {
+  if (program.lint && !program.watch) {
+    return Run.one(['sb-lint'], {nonFatal: true});
+  }
+  return Promise.resolve();
+}).then(function(retval) {
+  var lintingFail = false;
+  if (retval && retval.status && retval.status !== 0) {
+    lintingFail = true;
+  }
+
+  var server = new KarmaServer(karmaConfig, function(exitCode) {
+    // always return failure if linting failed
+    // unless this is during --watch
+    if (!program.watch && lintingFail) {
+      exitCode = 1;
+    }
+    process.exit(exitCode)
+  });
+
+  server.start();
+
+  if (program.watch) {
+    var patterns = karmaConfig.files.map(function(obj) {
+      return obj.pattern;
+    });
+    Watch(patterns, debounce(function() {
+      server.refreshFiles();
+    }, 1000));
+  }
+
+});
+

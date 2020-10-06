@@ -1,0 +1,12 @@
+.MediaContainer {
+  width: 100%;
+  overflow: hidden;
+}
+
+.MediaContainer > div {
+  height: 100%;
+}
+
+.MediaContainer-content, .MediaContainer-content > div {
+  height: 100%;
+}

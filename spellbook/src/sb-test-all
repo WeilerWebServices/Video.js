@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Run = require('./utils/run');
+var config = require('./utils/get-config')();
+var Promise = require('bluebird');
+var log = require('./utils/log');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'keep the tester running and run as things change')
+    .option('-nb, --no-build', 'dont build before testing')
+    .option('-b, --browsers <list,of,browsers>', 'comma seperated list of browsers')
+    .option('-p, --port <port>', 'port for karma server')
+    .option('-nl, --no-lint', 'dont lint before testing');
+});
+
+if (!config.test) {
+  log.warn('Test running is turned off!');
+  process.exit(0);
+}
+
+var commands = [
+  ['sb-test-browser'],
+];
+
+if (config.test.node !== false) {
+  commands.push(['sb-test-node-all']);
+}
+
+commands = commands.map(function(command) {
+  command.push('--no-build');
+  command.push('--no-lint');
+
+  if (program.watch) {
+    command.push('--watch');
+  }
+
+  return command;
+});
+
+if (program.browsers) {
+  commands[0].push('--browsers')
+  commands[0].push(program.browsers)
+}
+
+if (program.port) {
+  commands[0].push('--port')
+  commands[0].push(program.port)
+}
+
+if (program.lint && !program.watch) {
+  commands.unshift(['sb-lint']);
+}
+
+var buildPromise = Promise.resolve();
+if (program.build && !program.watch) {
+  buildPromise = Run.one('sb-build');
+}
+
+buildPromise.then(function(retval) {
+  if (!program.watch) {
+    return Run.series(commands, {failAfter: true});
+  } else {
+    return Run.parallel(commands);
+  }
+});

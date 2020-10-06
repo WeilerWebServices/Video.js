@@ -1,0 +1,63 @@
+{
+  "name": "videojs-generate-karma-config",
+  "version": "5.3.1",
+  "description": "Generate a standard karma config, so that plugins don't need the same script in every repository.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "vjsstandard",
+    "test": "npm run test:unit && npm run test:verify",
+    "test:unit": "npm run lint",
+    "test:verify": "vjsverify --skip-es-check --verbose",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "prepublishOnly": "npm run test:verify"
+  },
+  "lint-staged": {
+    "*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc",
+      "git add"
+    ]
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/videojs/videojs-generate-karma-config"
+  },
+  "author": "Brandon Casey <videojs@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-generate-karma-config/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-generate-karma-config",
+  "dependencies": {
+    "karma-browserstack-launcher": "~1.4.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-coverage": "^1.1.2",
+    "karma-detect-browsers": "^2.2.6",
+    "karma-firefox-launcher": "^1.1.0",
+    "karma-ie-launcher": "^1.0.0",
+    "karma-qunit": "^3.1.2",
+    "karma-safari-applescript-launcher": "~0.1.0",
+    "karma-static-server": "^1.0.0",
+    "karma-teamcity-reporter": "^1.1.0",
+    "qunit": "~2.9.1"
+  },
+  "peerDependencies": {
+    "karma": "*"
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "^1.0.0",
+    "videojs-generator-verify": "~1.2.0",
+    "videojs-standard": "^8.0.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

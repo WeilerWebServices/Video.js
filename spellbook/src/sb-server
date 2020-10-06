@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var browserSync = require('browser-sync');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var log = require('./utils/log');
+var proxies = require('./utils/proxies');
+var path = require('path');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-p, --port <number>', 'what port to start the server on', parseInt)
+    .option('-tp, --test-port <number>', 'what port the karma server is on', parseInt)
+    .option('-o, --open', 'open the server in your default browser')
+    .option('-s, --sync', 'enable cross browser action sync')
+    .option('-t, --tunnel', 'enable cross browser action sync')
+    .option('-nui, --no-ui', 'disable browser-sync ui');
+});
+
+program.testPort = program.testPort || process.env.TEST_PORT || 9876;
+program.port = program.port || process.env.PORT || 9999;
+
+program.open = program.open ? 'local' : false;
+if (program.open && program.tunnel) {
+  program.open = 'tunnel';
+}
+
+if (program.ui) {
+  program.ui = {
+    port: (program.port+1)
+  };
+}
+
+var server = browserSync.create()
+server.init({
+  server: {
+    baseDir: config.path,
+    middleware: [proxies.test(program, server)]
+  },
+  watchOptions: {
+    ignored: [path.join(config.path, 'node_modules')],
+  },
+  port: program.port,
+  ghostMode: program.sync || false,
+  ui: program.ui,
+  open: program.open,
+  online: program.tunnel || false,
+  injectChanges: false,
+  reloadDebounce: 1000,
+  tunnel: program.tunnel || false,
+  logPrefix: function() {
+    return log.prefix('info');
+  },
+  files: [
+    path.join(config.path, 'dist', '**', '*.js'),
+    path.join(config.path, 'dist', '**', '*.css'),
+    path.join(config.path, 'dist', '**', '*.html'),
+    path.join(config.path, 'build', '**', '*.js'),
+    path.join(config.path, 'build', '**', '*.css'),
+    path.join(config.path, 'build', '**', '*.html'),
+    path.join(config.path, 'examples', '**', '*.html'),
+    path.join(config.path, 'index.html')
+  ]
+});

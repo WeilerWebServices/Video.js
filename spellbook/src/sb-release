@@ -1,0 +1,138 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var PathsExist = require('./utils/paths-exist');
+var Run = require('./utils/run');
+var path = require('path');
+var glob = require('glob');
+var semver = require('semver');
+var fs = require('fs');
+var log = require('./utils/log');
+var Promise = require('bluebird');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var versions = [
+  'major',
+  'minor',
+  'patch',
+  'premajor',
+  'preminor',
+  'prepatch',
+  'prerelease'
+];
+
+var getPkg = function() {
+  return JSON.parse(fs.readFileSync(path.join(config.path, 'package.json'), 'utf8'));
+};
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-d, --dry-run', 'print which commands would be run')
+    .arguments('<new-version>')
+    .description('' +
+      '<new-version> is any valid semver (except the current one) examples:\n' +
+      '  * A valid semver version: X.X.X\n' +
+      '  * A valid semver word: major, minor, etc.')
+    .action(function(newVersion) {
+      this.newVersion = newVersion;
+    });
+});
+
+// check if we are being run with npm
+if ('npm_config_username' in process.env || 'npm_package_name' in process.env || 'npm_config_heading' in process.env) {
+  var npmArgs = JSON.parse(process.env.npm_config_argv);
+
+  // check if the user is doing npm version and error if they are
+  if (npmArgs.cooked[0] === 'version') {
+    program.npmVersion = true;
+    program.newVersion = getPkg().version;
+  }
+}
+
+// `npm version` will do this
+if (!program.newVersion) {
+  log.fatal('Must pass in a new-version');
+  process.exit(1);
+}
+
+// `npm version` will do this
+if (!program.npmVersion) {
+  if ((versions.indexOf(program.newVersion) === -1 && !semver.valid(program.newVersion)) ||
+      program.newVersion === config.version) {
+    log.fatal('new-version must be valid semver identifier');
+    log.fatal('and it cannot be the current version');
+    process.exit(1);
+  }
+}
+
+if (versions.indexOf(program.newVersion) !== -1) {
+  program.newVersion = semver.inc(config.version, program.newVersion);
+}
+
+if (!PathsExist(path.join(config.path, '.git'))) {
+  log.fatal('Your project must be a git repository');
+  process.exit(1);
+}
+
+var changelog = glob.sync(path.join(config.path, 'CHANGELOG.md'), {nocase: true})[0];
+if (!changelog) {
+  log.error('Your project should contain a CHANGELOG.md in the root');
+}
+
+var commands = [];
+if (program.npmVersion) {
+  commands.push(['git', 'reset', 'HEAD~1']);
+}
+
+if (changelog) {
+  commands.push(['chg', 'release', program.newVersion]);
+}
+
+// emulate npm version
+if (!program.dryRun) {
+  var pkg = getPkg();
+
+  pkg.version = program.newVersion;
+  fs.writeFileSync(path.join(config.path, 'package.json'), JSON.stringify(pkg, null, 2));
+}
+
+commands.push(['git', 'add', '--all']);
+commands.push(['git', 'commit', '-a', '-m', program.newVersion]);
+commands.push(['git', 'tag', '-f', 'v' + program.newVersion]);
+
+var bowerSupport = PathsExist(path.join(config.path, 'bower.json'));
+
+// If the project supports Bower, perform special extra versioning steps.
+if (bowerSupport) {
+  commands.push(['sb-build']);
+  if (config.js) {
+    commands.push(['git', 'add', '-f', config.js.distBrowser]);
+  }
+  if (config.css) {
+    commands.push(['git', 'add', '-f', config.css.dist]);
+  }
+  commands.push(['git', 'commit', '-a', '--amend', '-m', program.newVersion]);
+  commands.push(['git', 'tag', '-f', 'v' + program.newVersion]);
+  commands.push(['git', 'reset', 'HEAD~1']);
+  commands.push(['git', 'commit', '-a', '-m', program.newVersion]);
+}
+
+Promise.mapSeries(commands, function(command) {
+  log.info('running: ' + command.join(' '));
+  if (program.dryRun) {
+    return Promise.resolve();
+  }
+  var options = {silent: true};
+  if (command[0] === 'sb-build') {
+    options = {silent: false};
+  }
+  return Run.one(command, options);
+}).then(function() {
+  if (program.dryRun) {
+    log.info('That was a dry run, run without --dry-run to do it for real!');
+    return;
+  }
+  log.info(program.newVersion + ' is ready for release. Run the following to push to the remote repo:');
+  log.info('git push --tags');
+  log.info('git push');
+  log.info('sb-build');
+  log.info('npm publish');
+});

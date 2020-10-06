@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var config = require('./utils/get-config')();
+var PathsExist = require('./utils/paths-exist');
+var log = require('./utils/log');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch files for changes and rebuild');
+});
+
+Run.one('sb-clean').then(function() {
+  var commands = [];
+
+  ['js', 'test', 'css', 'docs', 'lang'].forEach(function(buildName) {
+    if (config[buildName] === false || !config[buildName].src || config[buildName].build === false) {
+      log.debug(buildName + ' build is turned off in package.json.');
+    } else if (!PathsExist(config[buildName].src)) {
+      log.debug(buildName + ' build will not run as src dir ' + config[buildName].src + ' does not exist.');
+    } else {
+      commands.push(['sb-build-' + buildName + '-all']);
+    }
+  });
+
+  if (!commands) {
+    log.fatal('There is nothing to build!');
+    process.exit(1);
+  }
+
+  if (program.watch) {
+    commands = commands.map(function(command) {
+      command.push('--watch');
+      return command;
+    });
+  }
+
+  return Run.parallel(commands);
+});

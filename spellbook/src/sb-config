@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+var CommanderWrapper = require('./utils/commander-wrapper');
+var config = require('./utils/get-config')();
+
+var program = CommanderWrapper(function(commander) {
+  return commander;
+});
+
+console.log(JSON.stringify(config, null, 2));

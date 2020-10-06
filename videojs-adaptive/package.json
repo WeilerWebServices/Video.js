@@ -1,0 +1,32 @@
+{
+  "name": "videojs-adaptive",
+  "version": "0.0.0",
+  "description": "Building support for adaptive streaming video formats into video.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/videojs/videojs-adaptive.git"
+  },
+  "keywords": [
+    "dash",
+    "hls"
+  ],
+  "author": "Brightcove, Inc.",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-adaptive/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-adaptive",
+  "devDependencies": {
+    "qunitjs": "~1.15.0",
+    "sinon": "~1.11.1",
+    "grunt": "~0.4.5",
+    "grunt-contrib-qunit": "~0.5.2",
+    "grunt-contrib-uglify": "~0.6.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-browserify": "~3.2.0"
+  }
+}

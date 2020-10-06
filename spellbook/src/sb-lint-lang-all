@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var config = require('./utils/get-config')();
+var log = require('./utils/log');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch files for changes and re-lint')
+    .option('-e, --errors', 'only log errors')
+    .option('-f, --fix', 'automatically fix semantic errors were possible');
+});
+
+var commands = [
+  ['sb-lint-lang-src']
+];
+
+commands = commands.map(function(command) {
+  if (program.errors) {
+    command.push('--errors');
+  }
+  if (program.watch) {
+    command.push('--watch');
+  }
+  if (program.fix) {
+    command.push('--fix');
+  }
+  return command;
+});
+
+Run.parallel(commands, {failAfter: true});

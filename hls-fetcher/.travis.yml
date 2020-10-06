@@ -1,0 +1,9 @@
+sudo: false
+dist: trusty
+language: node_js
+node_js:
+  - 'lts/*'
+before_install:
+- npm install -g greenkeeper-lockfile@1
+after_script: greenkeeper-lockfile-upload
+

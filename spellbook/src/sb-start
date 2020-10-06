@@ -1,0 +1,74 @@
+#!/usr/bin/env node
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-p, --port <number>', 'what port to start the server on', parseInt)
+    .option('-tp, --test-port <number>', 'what port to start the test server on', parseInt)
+    .option('-o, --open', 'open the server in your default browser')
+    .option('-nb, --no-build', 'dont build or watch build')
+    .option('-nl, --no-lint', 'dont lint or watch lint')
+    .option('-t, --tunnel', 'enable cross browser action sync')
+    .option('-nui, --no-ui', 'turn off the BrowserSync UI')
+    .option('-s, --sync', 'Sync browser actions across tabs/browsers');
+});
+
+var delayTime = 1000;
+
+if (program.build) {
+  delayTime += 4000;
+}
+
+
+if (program.lint) {
+  delayTime += 2000;
+}
+
+setTimeout(function() {
+  var serverCommand = ['sb-server'];
+  if (program.open) {
+    serverCommand.push('--open');
+  }
+
+  if (program.tunnel) {
+    serverCommand.push('--tunnel');
+  }
+
+  if (program.port) {
+    serverCommand.push('--port');
+    serverCommand.push(program.port);
+  }
+
+  if (program.testPort) {
+    serverCommand.push('--test-port');
+    serverCommand.push(program.testPort);
+  }
+
+  if (program.noUi) {
+    serverCommand.push('--no-ui');
+  }
+
+  if (program.sync) {
+    serverCommand.push('--sync');
+  }
+
+  Run.one(serverCommand, {nonFatal: true});
+}, delayTime);
+
+var watchCommand = ['sb-watch'];
+
+if (program.testPort) {
+  watchCommand.push('--port');
+  watchCommand.push(program.testPort);
+}
+
+if (!program.lint) {
+  watchCommand.push('--no-lint');
+}
+
+if (!program.build) {
+  watchCommand.push('--no-build');
+}
+
+Run.one(watchCommand, {nonFatal: true});

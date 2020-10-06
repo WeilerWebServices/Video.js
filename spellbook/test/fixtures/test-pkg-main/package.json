@@ -1,0 +1,21 @@
+{
+  "name": "test-pkg-main",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/es5/index.js",
+  "jsnext:main": "src/js/index.js",
+  "scripts": {
+    "release": "sb-release",
+    "postversion": "sb-release"
+  },
+  "author": "Brandon 'Casey <someemail@lol.com> (http://foo.bar.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "test-pkg-two": "*",
+    "video.js": "^5.16.0",
+    "videojs-spellbook": "*"
+  },
+  "spellbook": {
+    "logLevel": "info"
+  }
+}

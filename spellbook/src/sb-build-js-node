@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var path = require('path');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Run = require('./utils/run');
+var log = require('./utils/log');
+var GetFiles = require('./utils/get-files');
+var rimraf = require('rimraf');
+var mkdirp = require('mkdirp');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'incremental rebuild')
+    .option('-d, --dist <dir>', 'directory to write output to', config.js.distNode)
+    .arguments('<dir>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+if (!program.src) {
+  program.src = config.js.src;
+}
+
+if (!GetFiles(path.join(program.src, '**', '*.js'))) {
+  log.fatal('Source directory ' + program.src + ' does not exist or contains no js files!');
+  process.exit(1);
+}
+
+var command = [
+  'babel',
+  '-d', program.dist,
+  '--presets', 'babel-preset.config.js',
+  program.src
+];
+
+if (program.watch) {
+  command.push('--watch');
+}
+
+rimraf.sync(program.dist);
+mkdirp.sync(path.dirname(program.dist));
+
+log.info('Building...');
+Run.one(command, {toLog: true});

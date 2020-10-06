@@ -1,0 +1,62 @@
+.FileLoader {
+  font-size: 24px;
+  text-align: left;
+  height: 100%;
+}
+
+.FileLoader > form {
+  height: 100%;
+}
+
+.FileLoader-options {
+  display: flex;
+  justify-content: center;
+}
+/*
+.FileLoader-options button {
+  font-family: 'Text Me One', sans-serif;
+  border: none;
+  background-color: #b1c647;
+  color: #333;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 5px;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.FileLoader-options button:hover {
+  cursor: pointer;
+  background-color: #c1d42f;
+}
+*/
+
+.FileLoader-local, .FileLoader-remote {
+  display: inline-block;
+}
+
+.FileLoader-remote {
+  display: flex;
+  margin-left: 20px;
+}
+
+.FileLoader-remote input{
+  color: #eee !important;
+}
+
+.FileLoader-local .filepicker {
+  color: #eee;
+}
+
+.FileLoader-local .filepicker svg {
+  margin: 0 auto;
+}
+
+.upload-icon-text {
+  height: 12px;
+  margin: 0 auto;
+  font-size: 10px;
+  color: #eee;
+  z-index: 1;
+  width: 40px;
+}

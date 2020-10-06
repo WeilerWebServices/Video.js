@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Run = require('./utils/run');
+var config = require('./utils/get-config')();
+var Promise = require('bluebird');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'keep the tester running and run as things change')
+    .option('-nb, --no-build', 'dont build before testing')
+    .option('-nl, --no-lint', 'dont lint before testing');
+});
+
+var buildPromise;
+if (program.build) {
+  buildPromise = Run.one('sb-build');
+} else {
+  buildPromise = Promise.resolve();
+}
+
+var commands = [
+  ['sb-test-node-require'],
+];
+
+commands.map(function(command) {
+  command.push('--no-build');
+  command.push('--no-lint');
+
+  if (program.watch) {
+    command.push('--watch');
+  }
+
+  return command;
+});
+
+if (program.lint) {
+  commands.unshift('sb-lint');
+}
+
+buildPromise.then(function() {
+  Run.series(commands, {failAfter: true});
+});

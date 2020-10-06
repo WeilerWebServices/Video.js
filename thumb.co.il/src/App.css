@@ -1,0 +1,146 @@
+/* apply a natural box layout model to all elements, but allowing components to change */
+html {
+  box-sizing: border-box;
+  height: 100%;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body{
+  background-color: #eee;
+  color: #717171;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+.App {
+  height: 100%;
+  position: relative;
+}
+
+/*
+.App {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%
+}
+
+.App-header {
+  height: auto;
+  display: flex;
+  padding: 18px 15px 6px 0;
+  font-family: 'Text Me One', sans-serif;
+  font-size: 36px;
+  justify-content: flex-start;
+  align-items: stretch;
+  background-color: #333;
+  color: #ddd;
+  margin-bottom: 0px;
+  border-bottom: solid 1px #ccc;
+}
+
+
+.App-logo {
+  height: 130px;
+  position: relative;
+  width: 130px;
+  flex: 0 0 130px;
+  margin: 20px 0 0 20px;
+  align-self: flex-end;
+  transform: rotate(-30deg);
+  order: 1;
+}
+
+.App-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+}
+
+.App-name {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  right: 0;
+  color: #eee;
+  margin: 0;
+  padding: 0;
+  font-size: 18px;
+}
+
+.App-info {
+  align-self: center;
+  flex-grow: 1;
+  text-align: right;
+  padding-bottom: 6px;
+  order: 3
+}
+
+.App-fileloader {
+  flex: 0 0 350px;
+  align-self: stretch;
+  margin: 12px 20px 6px;
+  order: 2;
+}
+
+.App-description {
+  color: #eee;
+}
+
+.App-sub-description {
+  font-size: 18px;
+}
+
+.App-intro {
+  font-size: large;
+}
+*/
+
+.App-content {
+  margin: 12px 10px;
+  display: flex;
+  height: calc(100% - 88px);
+  overflow: hidden;
+  /*
+  background-image: url('./thumbcoil_logo.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  */
+}
+
+.App-no-content {
+  margin: 0 auto;
+  padding: 48px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content:  center;
+  position: relative;
+  width: 100%;
+  font-size: 18px;
+}
+
+.gopview {
+  position: relative;
+}
+
+.rv-crosshair {
+  position: absolute;
+  margin-top: -300px;
+}
+
+.crosshair>p {
+  padding: 0;
+  margin: 0;
+}
+
+.gops rect {
+  rx: 8px;
+  ry: 8px;
+}

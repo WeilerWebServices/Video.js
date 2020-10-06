@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var path = require('path');
+var PathsExist = require('./utils/paths-exist');
+var log = require('./utils/log');
+var Run = require('./utils/run');
+var glob = require('glob');
+var CommanderWrapper = require('./utils/commander-wrapper');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch files for changes and re-lint')
+    .option('-e, --errors', 'only log errors')
+    .option('-f, --fix', 'automatically fix errors before linting, does not work with --watch')
+    .arguments('<glob-or-file...>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+if (!program.src) {
+  program.src = [path.join(config.docs.src, '**', '*.md')];
+}
+
+// make it glob
+var files = [];
+program.src.forEach(function(src) {
+  if (path.extname(src) === '') {
+    src = path.join(src, '**', '*.md');
+  }
+
+  var f = glob.sync(src);
+
+  // remark hangs if we have no files
+  if (f.length === 0) {
+    log.fatal('No docs to lint for glob ' + src + '!');
+    process.exit(1);
+  }
+  files.push(src);
+});
+
+
+var command = [
+  'remark',
+  '--rc-path', 'remark-lint.config.js',
+  '--no-stdout',
+].concat(files);
+
+if (program.watch) {
+  command.push('--watch');
+}
+
+if (program.errors) {
+  command.push('--silent');
+}
+
+if (program.fix && !program.watch) {
+  command.push('--output');
+}
+
+Run.one(command, {toLog: true, nonFatal: program.watch}).then(function(result) {
+  if (program.fix) {
+    // remove --output and lint again
+    command.pop();
+    return Run.one(command, {toLog: true});
+  } else {
+    return Promise.resolve(result);
+  }
+});

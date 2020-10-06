@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+var path = require('path');
+var log = require('./utils/log');
+var config = require('./utils/get-config')();
+var GetFiles = require('./utils/get-files');
+var PathsExist = require('./utils/paths-exist');
+var exorcistHelper = require('./utils/exorcist-helper');
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Watch = require('./utils/watch');
+var postcssHelper = require('./utils/postcss-helper');
+var rimraf = require('rimraf');
+var mkdirp = require('mkdirp');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'incremental rebuild')
+    .option('-d, --dist <dist-dir>', 'dir to write output to', config.css.dist)
+    .arguments('<src-dir>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+if (!program.src) {
+  program.src = config.css.src;
+}
+
+var files = GetFiles(
+  path.join(program.src, 'index.scss'),
+  path.join(program.src, 'index.sass')
+);
+
+if (!files.length) {
+  log.fatal('Source directory ' + program.src + ' does not exist or contains no index.scss/index.sass!');
+  process.exit(1);
+}
+
+// get the dist file with no extension
+var distFile = path.join(program.dist, config.name);
+
+var command = [
+  'node-sass',
+  files[0],
+  distFile + '.css',
+  '--output-style=compressed',
+  '--linefeed=lf',
+  '--sourceMap true',
+  '--sourceMapContents',
+  '--sourceMapEmbed'
+];
+
+// node-sass does offer --watch,
+// but we don't gain much by using it
+// command.push('--watch');
+var build = function() {
+  log.info('Building...');
+
+  ['.css', '-with-map.css', '.css.map', '.min.css.map', '.min.css', '-with-map.min.css'].forEach(function(ext) {
+    rimraf.sync(distFile + ext);
+  });
+  mkdirp.sync(path.dirname(distFile));
+
+  var sassRetval = Run.one(command, {silent: true, nonFatal: program.watch}).then(function(retval) {
+    if (retval.status !== 0 && program.watch) {
+      log.error('Build Failed!');
+      log.error(JSON.parse(retval.stderr).formatted);
+      return;
+    }
+    return postcssHelper({
+      src: distFile + '.css',
+      dist: distFile,
+      watch: program.watch,
+      noStart: true
+    });
+  });
+};
+
+if (program.watch) {
+  Watch(path.join(program.src, '**', '*' + path.extname(files[0])), build);
+} else {
+  build();
+}

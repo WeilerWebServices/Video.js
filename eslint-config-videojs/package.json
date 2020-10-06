@@ -1,0 +1,66 @@
+{
+  "name": "eslint-config-videojs",
+  "description": "An ESLint Shareable Config for video.js Standard Style.",
+  "version": "5.0.2",
+  "author": "Brightcove, Inc.",
+  "bugs": {
+    "url": "https://github.com/videojs/eslint-config-videojs/issues"
+  },
+  "homepage": "https://github.com/videojs/eslint-config-videojs",
+  "keywords": [
+    "videojs",
+    "standard",
+    "style checker",
+    "code style",
+    "code checker",
+    "code linter",
+    "style linter",
+    "simple",
+    "policy",
+    "style",
+    "code",
+    "lint",
+    "eslint",
+    "eslintconfig",
+    "jshint",
+    "jscs",
+    "hint",
+    "enforce",
+    "check",
+    "verify",
+    "quality",
+    "checker",
+    "code standards"
+  ],
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/videojs/eslint-config-videojs.git"
+  },
+  "scripts": {
+    "lint": "eslint --config index.js index.js",
+    "test": "npm run lint",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s"
+  },
+  "lint-staged": {
+    "README.md": [
+      "doctoc",
+      "git add"
+    ]
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "^1.0.0",
+    "eslint": "^5.12.1",
+    "eslint-plugin-jsdoc": "^4.0.1",
+    "eslint-plugin-json-light": "^1.0.3",
+    "eslint-plugin-markdown": "^1.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

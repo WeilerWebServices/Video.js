@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var PathsExist = require('./utils/paths-exist');
+var path = require('path');
+var log = require('./utils/log');
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var Promise = require('bluebird');
+var Watch = require('./utils/watch');
+var fs = require('fs');
+var GetTmpDir = require('./utils/get-tmp-dir');
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
+var debounce = require('lodash.debounce');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'keep the tester running and run as things change')
+    .option('-nb, --no-build', 'dont build before testing')
+    .option('-nl, --no-lint', 'dont lint before testing');
+});
+
+if (program.watch) {
+  program.lint = false;
+  program.build = false;
+}
+
+var content = [
+  '"use strict;"',
+  'var t = require(\'' + config.main + '\');',
+  'if (typeof t === \'undefined\') {',
+  '  process.exit(404);',
+  '}'
+].join('\n');
+
+var distFile = path.join(config.test.dist, 'node-require.js');
+mkdirp.sync(path.dirname(distFile));
+fs.writeFileSync(distFile, content);
+
+var exit = function(code) {
+  log.debug('removing ' + distFile);
+  rimraf.sync(distFile);
+};
+
+process.on('exit', exit);
+
+var run = function() {
+  var nodeCommand = ['node', distFile];
+  var lintingFail = false;
+  var buildPromise = Promise.resolve();
+  if (program.build) {
+    buildPromise = Run.one('sb-build');
+  }
+
+  buildPromise.then(function() {
+    if (program.lint) {
+      return Run.one(['sb-lint'], {nonFatal: true});
+    }
+    return Promise.resolve();
+  }).then(function(retval) {
+    if (retval && retval.status && retval.status !== 0) {
+      lintingFail = true;
+    }
+    return Run.one(nodeCommand, {silent: true, nonFatal: true});
+  }).then(function(retval) {
+    if (retval.status === 0) {
+      log.info('*******************************');
+      log.info('node require was successful');
+      log.info('*******************************');
+    } else if (retval.status === 404) {
+      log.warn('*******************************');
+      log.warn('node require was successful, but only undefined was exported!');
+      log.warn('*******************************');
+
+    } else {
+      log.fatal('*******************************');
+      log.fatal('node require failed with error:', retval.stderr);
+      log.fatal('*******************************');
+      if (!program.watch) {
+        process.exit(1);
+      }
+    }
+    if (lintingFail) {
+      log.fatal('*******************************');
+      log.fatal('code linting failed!');
+      log.fatal('*******************************');
+      process.exit(1);
+    }
+  });
+};
+
+if (program.watch) {
+  Watch(path.join(config.js.distNode, '**', '*.js'), debounce(function() {
+    run();
+  }, 1000));
+} else {
+  run();
+}

@@ -1,0 +1,190 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var PathsExist = require('./utils/paths-exist');
+var path = require('path');
+var GetPath = require('./utils/get-path');
+var fs = require('fs');
+var log = require('./utils/log');
+var Promise = require('bluebird');
+var Watch = require('./utils/watch');
+var browserifyHelper = require('./utils/browserify-helper');
+var webpack = require('webpack');
+var Run = require('./utils/run');
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
+
+var es6 = function(bundler) {
+  return [
+    '/**',
+    ' * ' + bundler + ' test ',
+    ' */',
+    'import pkg from "' + path.join('..', '..', path.relative(config.path, config.jsNextMain)) + '";',
+    '',
+    'QUnit.module("' + bundler + ' require");',
+    'QUnit.test("' + config.name + ' should be requireable via ' + bundler + '", (assert) => {',
+    '  assert.ok(pkg, "' + config.name + ' is required properly");',
+    '});',
+  ].join('\n');
+};
+
+var CommanderWrapper = require('./utils/commander-wrapper');
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'keep the tester running and run as things change');
+});
+
+if (config.test && config.test.bundlers === false) {
+  log.info('bundler test builds are turned off');
+  process.exit(0);
+}
+var dist = config.test.dist;
+
+// always finish the log
+var exit = function(code) {
+  var rmGlob = path.join(dist, '*.start.js');
+
+  log.debug('removing ' + rmGlob);
+  rimraf.sync(rmGlob);
+};
+
+process.on('exit', exit);
+
+var build = function() {
+  // TODO: get rollup to work during watch
+  var bundlers = [];
+  var promises = [];
+
+  log.info('Building...');
+
+  if (config.test !== false || (typeof config.test === 'object' && config.test.bundlers !== false)) {
+    bundlers = ['webpack', 'browserify'];
+  } else if (typeof config.test === 'object' && typeof config.test.bundlers === 'object') {
+    bundlers = config.test.bundlers;
+  }
+
+  bundlers.forEach(function(bundlerName) {
+    var srcFile = path.join(dist, bundlerName + '.start.js');
+    var distFile = path.join(dist, bundlerName + '.test.js');
+    var unitTestContents  = es6(bundlerName);
+    var command;
+
+    // cleanup
+    rimraf.sync(srcFile);
+    rimraf.sync(distFile);
+
+    if (bundlerName === 'browserify') {
+      command = function() {
+        return browserifyHelper({
+          dist: distFile.replace(/\.js$/, ''),
+          src: srcFile,
+          standalone: false,
+          watch: program.watch,
+          internalMap: true,
+          noRollup: true
+        });
+      };
+    } else if (bundlerName === 'rollup') {
+      // rollup only works on es6
+      command = function() {
+        // due to a bug with rollupify?
+        // we cannot use watchify
+        var build = function() {
+          return browserifyHelper({
+            dist: distFile.replace(/\.js$/, ''),
+            src: srcFile,
+            standalone: false,
+            watch: false,
+            internalMap: true
+          });
+        };
+        if (program.watch) {
+          Watch(path.join(config.js.src, '**', '*.js'), build);
+          return Promise.resolve();
+        } else {
+          return build();
+        }
+      };
+    } else if (bundlerName === 'webpack') {
+      command = function() {
+        var externals = {};
+        var first = true;
+
+        Object.keys(config.shim).forEach(function(k) {
+          externals[k] = config.shim[k].exports.replace('global:', '');
+        });
+
+        return new Promise(function(resolve, reject) {
+          webpack({
+            watch: program.watch || false,
+            module: {
+              rules: [{
+                test: /\.js$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                  loader: 'babel-loader',
+                  options: {
+                    cacheDirectory: program.watch || false,
+                    presets: [GetPath('babel-preset.config.js')]
+                  }
+                }
+              }]
+            },
+            resolve: {
+              modules: [
+                path.join(__dirname, '..', 'node_modules'),
+                path.join(config.path, 'node_modules')
+              ],
+            },
+            resolveLoader: {
+              modules: [
+                path.join(__dirname, '..', 'node_modules'),
+                path.join(config.path, 'node_modules')
+              ],
+            },
+            context: config.path,
+            entry: srcFile,
+            // TODO: webpack breaks when we do inline-source-map...
+            devtool: 'inline-source-map',
+            externals: externals,
+            output: {
+              filename: path.basename(distFile),
+              path: path.dirname(distFile)
+            },
+          }, function(err, stats) {
+            if(err) {
+              reject(err);
+            }
+            var jsonStats = stats.toJson();
+            if (jsonStats.errors.length) {
+              reject(jsonStats.errors.join(''));
+            }
+            if (jsonStats.warnings.length) {
+              log.warn(jsonStats.warnings.join(''));
+            }
+
+            // TODO: webpack logs twice during first watch
+            if (first && program.watch) {
+              first = false;
+            } else {
+              log.info('Wrote: ' + distFile);
+            }
+            resolve();
+          });
+        });
+      };
+    }
+
+    mkdirp.sync(path.dirname(srcFile));
+    mkdirp.sync(path.dirname(distFile));
+    fs.writeFileSync(srcFile, unitTestContents);
+    promises.push(command());
+  });
+
+  Promise.all(promises).then(function() {
+    // done
+  }).catch(function(err) {
+    log.error(err);
+  });
+};
+
+build();

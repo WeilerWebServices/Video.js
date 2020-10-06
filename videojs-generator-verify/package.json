@@ -1,0 +1,67 @@
+{
+  "name": "videojs-generator-verify",
+  "version": "2.0.0",
+  "description": "A tool to verify that a generator-videojs-plugin project is ready for publish.",
+  "main": "src/index.js",
+  "bin": {
+    "vjsverify": "src/cli.js",
+    "videojs-generator-verify": "src/cli.js"
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/videojs/videojs-generator-verify"
+  },
+  "author": "Brandon Casey <brandonocasey@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "colorette": "^1.1.0",
+    "es-check": "^5.0.0",
+    "pkg-can-install": "^1.0.4",
+    "pkg-ok": "^2.3.1",
+    "shelljs": "^0.8.3"
+  },
+  "scripts": {
+    "lint": "vjsstandard",
+    "pretest": "npm run lint",
+    "test": "npm run test:unit && npm run test:verify",
+    "test:unit": "ava test/index.test.js",
+    "test:verify": "./src/cli.js --skip-es-check --verbose",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "prepublishOnly": "npm run test:verify"
+  },
+  "lint-staged": {
+    "*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc --notitle",
+      "git add"
+    ]
+  },
+  "files": [
+    "src"
+  ],
+  "vjsstandard": {
+    "ignore": [
+      "test/fixture"
+    ]
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "~1.2.0",
+    "ava": "^2.3.0",
+    "videojs-standard": "^8.0.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-generator-verify/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-generator-verify"
+}

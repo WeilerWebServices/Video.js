@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+var path = require('path');
+var config = require('./utils/get-config')();
+var GetFiles = require('./utils/get-files');
+var Watch = require('./utils/watch');
+var Run = require('./utils/run');
+var log = require('./utils/log');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch docs for changes and rebuild')
+    .option('-d, --dist <dist-dir>', 'directory to build api docs to', path.join(config.docs.dist, 'api'))
+    .arguments('<src-dir>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+
+if (!program.src) {
+  program.src = config.js.src;
+}
+
+if (!GetFiles(path.join(program.src, '**', '*.js'))) {
+  log.fatal('Source directory ' + program.src + ' does not exist or contains no js files!');
+  process.exit(1);
+}
+
+var command = [
+  'jsdoc', program.src,
+  '--configure', 'jsdoc.config.json',
+  '-r',
+  '-d', program.dist
+];
+
+var build = function() {
+  rimraf.sync(program.dist);
+  mkdirp.sync(path.dirname(program.dist));
+
+  log.info('Building...');
+  Run.one(command, {silent: true, nonFatal: program.watch, write: path.join(program.dist, 'index.html')}).then(function(retval) {
+    if (program.watch && retval.status !== 0) {
+      log.error(retval.stderr);
+      return;
+    }
+    log.info('Wrote: ' + program.dist);
+  });
+};
+
+if (program.watch) {
+  Watch(path.join(program.src, '**', '*.js'), build);
+} else {
+  build();
+}

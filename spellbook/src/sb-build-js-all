@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var log = require('./utils/log');
+var config = require('./utils/get-config')();
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'incrementally rebuild');
+});
+
+var commands = [
+  ['sb-build-js-node'],
+  ['sb-build-js-browser'],
+];
+
+if (program.watch) {
+  commands = commands.map(function(command) {
+    command.push('--watch');
+    return command;
+  });
+}
+
+Run.parallel(commands);

@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var path = require('path');
+var browserifyHelper = require('./utils/browserify-helper');
+var Run = require('./utils/run');
+var log = require('./utils/log');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var PathsExist = require('./utils/paths-exist');
+var GetFiles = require('./utils/get-files');
+var Watch = require('./utils/watch');
+var rimraf = require('rimraf');
+var sourceMappingURL = require('source-map-url');
+var fs = require('fs');
+var shelljs = require('shelljs');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'incremental rebuild')
+    .option('-d, --dist <dir>', 'dir to write output to', config.js.distBrowser)
+    .arguments('<dir>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+if (!program.src) {
+  program.src = config.js.src;
+}
+
+if(!GetFiles(path.join(program.src, 'index.js'))) {
+  log.fatal('Source directory ' + program.src + ' does not exist or contains no index.js!');
+  process.exit(1);
+}
+
+var distFile = path.join(program.dist, config.name);
+log.info('Building...');
+browserifyHelper({
+  dist: distFile,
+  src: path.join(program.src, 'index.js'),
+  standalone: true,
+  watch: program.watch
+}).then(function() {
+  // we don't want to uglify after watching
+  if (program.watch) {
+    return;
+  }
+  // clean
+  ['min.js', 'min.js.map', '-with-map.min.js'].forEach(function(ext) {
+    rimraf.sync(distFile + ext);
+  });
+
+  var command = [
+    'uglifyjs',
+    '--compress',
+    '--mangle',
+    '--in-source-map',
+    distFile + '.js.map',
+    '--source-map',
+    distFile + '.min.js.map',
+    '--source-map-url',
+    path.basename(distFile) + '.min.js.map',
+    '--comments',
+    '-o',
+    distFile + '.min.js',
+    '--',
+    distFile + '.js'
+  ];
+
+  if (config.ie8) {
+    command.splice(1, 0, '--support-ie8');
+  }
+
+  return Run.one(command, {silent: true}).then(function() {
+    log.info('Wrote: ' + distFile + '.min.js');
+    log.info('Wrote: ' + distFile + '.min.js.map');
+
+    var code = fs.readFileSync(distFile + '.js', 'utf8');
+    var minCode = fs.readFileSync(distFile + '.min.js', 'utf8');
+
+    shelljs.cp(distFile + '.js', distFile + '-with-map.js');
+    shelljs.cp(distFile + '.min.js', distFile + '-with-map.min.js');
+    code = sourceMappingURL.removeFrom(code);
+    minCode = sourceMappingURL.removeFrom(minCode);
+
+    fs.writeFileSync(distFile + '.js', code);
+    fs.writeFileSync(distFile + '.min.js', minCode);
+
+    log.info('Wrote: ' + distFile + '-with-map.min.js');
+    log.info('Wrote: ' + distFile + '-with-map.js');
+
+  });
+});

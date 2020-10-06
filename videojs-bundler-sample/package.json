@@ -1,0 +1,49 @@
+{
+  "name": "videojs-bundler-sample",
+  "version": "1.0.0",
+  "description": "A sample for using and testing bundlers with Video.js",
+  "main": "index.js",
+  "scripts": {
+    "browserify-es5": "browserify src-es5/index.js > dist/browserify-es5.js",
+    "webpack-es5": "webpack --config src-es5/webpack.config.js",
+    "browserify-es6": "browserify -t [ babelify ] src-es6/index.js > dist/browserify-es6.js",
+    "webpack-es6": "webpack --config src-es6/webpack.config.js",
+    "rollup-es6": "rollup -c src-es6/rollup.js",
+    "start": "run-p browserify-es5 webpack-es5 browserify-es6 webpack-es6 rollup-es6",
+    "prestart": "mkdirp dist/"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/videojs/videojs-bundler-sample.git"
+  },
+  "keywords": [
+    "Video.js",
+    "videojs",
+    "video",
+    "webpack",
+    "browserify",
+    "rollup"
+  ],
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-bundler-sample/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-bundler-sample#readme",
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-env": "^1.4.0",
+    "babelify": "^7.3.0",
+    "browserify": "^14.3.0",
+    "mkdirp": "^0.5.1",
+    "npm-run-all": "^4.0.2",
+    "rollup": "^0.41.6",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "video.js": "^5.19.2",
+    "webpack": "^2.5.1"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "generator-videojs-plugin",
+  "version": "7.6.3",
+  "description": "A Yeoman generator for Video.js plugins",
+  "license": "Apache-2.0",
+  "main": "generators/app/index.js",
+  "engines": {
+    "node": ">=8",
+    "npm": ">=5"
+  },
+  "repository": "videojs/generator-videojs-plugin",
+  "author": {
+    "name": "Pat O'Neill",
+    "email": "pgoneill@gmail.com",
+    "url": "https://github.com/misteroneill"
+  },
+  "vjsstandard": {
+    "ignore": [
+      "docs",
+      "generators/app/templates"
+    ]
+  },
+  "scripts": {
+    "lint": "vjsstandard",
+    "pretest": "npm run lint",
+    "test": "npm-run-all test:*",
+    "test:unit": "mocha test/*.test.js --timeout 10000",
+    "test:verify": "vjsverify --skip-es-check --verbose",
+    "preversion": "npm-run-all generate-pkg-lock test",
+    "generate-pkg-lock": "node scripts/generate-pkg-lock.js && git add plugin/package-lock.json",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "prepublishOnly": "npm run test:verify"
+  },
+  "lint-staged": {
+    "**/*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "(README.md|docs/conventions.md)": [
+      "doctoc --notitle",
+      "git add"
+    ]
+  },
+  "keywords": [
+    "yeoman-generator",
+    "videojs",
+    "videojs-plugin"
+  ],
+  "dependencies": {
+    "lodash": "^4.17.10",
+    "please-upgrade-node": "^3.1.1",
+    "yeoman-generator": "^3.1.1"
+  },
+  "devDependencies": {
+    "is-ci": "^2.0.0",
+    "mocha": "^6.0.0",
+    "@videojs/generator-helpers": "~1.1.0",
+    "videojs-generator-verify": "~1.2.0",
+    "videojs-standard": "^8.0.3",
+    "yeoman-assert": "^3.1.1",
+    "yeoman-test": "^2.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

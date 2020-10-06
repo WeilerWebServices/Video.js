@@ -1,0 +1,83 @@
+{
+  "name": "videojs-standard",
+  "description": "JavaScript style for plugins and tools in the video.js ecosystem.",
+  "version": "8.0.4",
+  "author": "Brightcove, Inc.",
+  "scripts": {
+    "lint": "./cli.js",
+    "test": "npm run lint",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s"
+  },
+  "lint-staged": {
+    "*.js": [
+      "./cli.js --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc",
+      "git add"
+    ]
+  },
+  "bin": {
+    "vjsstandard": "./cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/videojs/standard/issues"
+  },
+  "dependencies": {
+    "commander": "^2.17.1",
+    "eslint": "^5.16.0",
+    "eslint-config-videojs": "^5.0.2",
+    "eslint-plugin-jsdoc": "^4.8.4",
+    "eslint-plugin-json-light": "^1.0.3",
+    "eslint-plugin-markdown": "^1.0.0",
+    "find-root": "^1.0.0",
+    "tsmlb": "^1.0.0"
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "^1.1.0"
+  },
+  "homepage": "https://github.com/videojs/standard",
+  "keywords": [
+    "videojs",
+    "videojs-standard",
+    "check",
+    "checker",
+    "code",
+    "code checker",
+    "code linter",
+    "code standards",
+    "code style",
+    "enforce",
+    "eslint",
+    "hint",
+    "jscs",
+    "jshint",
+    "lint",
+    "policy",
+    "quality",
+    "simple",
+    "standard",
+    "standard style",
+    "style",
+    "style checker",
+    "style linter",
+    "verify"
+  ],
+  "license": "Apache-2.0",
+  "main": "cli.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/videojs/standard.git"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "vjsstandard": {
+    "jsdoc": false
+  }
+}

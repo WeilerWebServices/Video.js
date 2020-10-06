@@ -1,0 +1,51 @@
+{
+  "name": "videojs-4to5",
+  "description": "This is a script to help with bringing video.js 4.x code up to speed with changes in video.js 5.0.",
+  "version": "1.5.0",
+  "author": "Brightcove",
+  "copyright": "Copyright Brightcove, Inc. <https://www.brightcove.com/>",
+  "license": "Apache-2.0",
+  "main": "./src/main.js",
+  "bin": {
+    "videojs-4to5": "./bin/videojs-4to5"
+  },
+  "dependencies": {
+    "argv": "0.0.x",
+    "find": "0.2.x",
+    "grasp": "0.3.x",
+    "lodash": "3.x.x"
+  },
+  "devDependencies": {
+    "chai": "^3.3.0",
+    "jshint": "^2.8.0",
+    "karma": "^0.13.9",
+    "karma-browserstack-launcher": "^0.1.5",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^0.2.0",
+    "karma-detect-browsers": "^2.0.2",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.0",
+    "karma-mocha-reporter": "^1.1.1",
+    "karma-safari-launcher": "^0.1.1",
+    "mocha": "2.x.x",
+    "qunitjs": "^1.19.0",
+    "uglify-js": "^2.6.1",
+    "video.js": "^5.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/videojs/videojs-4to5.git"
+  },
+  "scripts": {
+    "build": "npm run clean && cp src/plugin.js dist/plugin.js && uglifyjs dist/plugin.js -m -o dist/plugin.min.js",
+    "clean": "rm -rf dist && mkdir -p dist",
+    "lint": "jshint src/ bin/",
+    "prepublish": "npm run build",
+    "preversion": "npm test",
+    "pretest": "npm run lint",
+    "test": "npm run test:replacer && npm run test:plugin",
+    "test:replacer": "mocha test/replacer.js",
+    "test:plugin": "karma start test/karma.config.js"
+  }
+}

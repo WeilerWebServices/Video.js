@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+var argv = require('argv');
+var main = require('../src/main');
+
+var args = argv.option([{
+  name: 'list',
+  short: 'l',
+  type: 'boolean',
+  description: 'Outputs a list of files that would be changed.'
+}, {
+  name: 'dry-run',
+  short: 'd',
+  type: 'boolean',
+  description: [
+    'Outputs changes to new files (without overwriting). For example, the ',
+    'file "foo.js" will have its changes saved to "videojs-4to5.foo.js".',
+    'Files with this prefix will be ignored on subsequent runs. This option ',
+    'supercedes --list.'
+  ].join('')
+}, {
+  name: 'double-quotes',
+  short: 'q',
+  type: 'boolean',
+  description: [
+    'Single quotes are used by default in generated code. This option will ',
+    'cause double quotes to be used instead.'
+  ].join('')
+}, {
+  name: 'ignore-dir',
+  short: 'i',
+  type: 'list',
+  description: [
+    'Use multiple times to ignore directory names (e.g., --ignore-dir=dist ',
+    '--ignore-dir=build). bower_components and node_modules are always ignored.'
+  ].join('')
+}]).run();
+
+main(args.targets, args.options).run();

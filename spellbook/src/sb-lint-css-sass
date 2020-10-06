@@ -1,0 +1,72 @@
+#!/usr/bin/env node
+var config = require('./utils/get-config')();
+var Watch = require('./utils/watch');
+var Run = require('./utils/run');
+var path = require('path');
+var log = require('./utils/log');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var PathsExist = require('./utils/paths-exist');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch files for changes and re-lint')
+    .option('-e, --errors', 'only log errors')
+    .option('-f, --fix', 'does not work for this binary')
+    .arguments('<glob-or-file...>')
+    .action(function(src) {
+      this.src = src;
+    });
+});
+
+if (!program.src) {
+  program.src = [
+    path.join(config.css.src, '**', '*.scss'),
+    path.join(config.css.src, '**', '*.sass'),
+  ];
+}
+
+var files = [];
+program.src.forEach(function(src) {
+  if (!path.extname(src)) {
+    files.push(path.join(src, '**', '*.scss'));
+    files.push(path.join(src, '**', '*.sass'));
+    return;
+  }
+  files.push(src);
+});
+
+var command =  [
+  'stylelint',
+  '-f', 'string',
+  '--color',
+  '--config', 'stylelint.config.js',
+].concat(files);
+
+if (program.errors) {
+  command.push('--quiet');
+}
+
+if (program.fix) {
+  log.info('--fix does not work currently as stylelint does not support it!');
+}
+
+var build = function() {
+  return Run.one(command, {toLog: true, nonFatal: program.watch}).then(function(result) {
+    if (result.stdout === '' && result.stderr === '') {
+      var msg = 'No linting problems!';
+
+      if (program.errors) {
+        msg += ' Note: there may be hidden warnings. as --errors is in use';
+      }
+
+      log.info(msg);
+    }
+  });
+
+};
+
+if (program.watch) {
+  Watch(program.src, build);
+} else {
+  build();
+}

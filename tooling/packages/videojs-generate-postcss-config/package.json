@@ -1,0 +1,57 @@
+{
+  "name": "videojs-generate-postcss-config",
+  "version": "2.1.0",
+  "description": "Generate a standard postcss config, so that plugins don't need the same script in every repository.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "vjsstandard",
+    "test": "npm run test:unit && npm run test:verify",
+    "test:unit": "npm run lint",
+    "test:verify": "vjsverify --skip-es-check --verbose",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "prepublishOnly": "npm run test:verify"
+  },
+  "lint-staged": {
+    "*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc",
+      "git add"
+    ]
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/videojs/videojs-generate-postcss-config"
+  },
+  "author": "Brandon Casey <videojs@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-generate-postcss-config/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-generate-postcss-config",
+  "dependencies": {
+    "autoprefixer": "^9.1.1",
+    "postcss-banner": "^3.0.0",
+    "postcss-calc": "^6.0.1",
+    "postcss-csso": "^3.0.0",
+    "postcss-custom-properties": "^8.0.8",
+    "postcss-import": "^12.0.0",
+    "postcss-nesting": "^7.0.0",
+    "postcss-progress": "^1.1.1"
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "^1.0.0",
+    "videojs-standard": "^8.0.2",
+    "videojs-generator-verify": "~1.2.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

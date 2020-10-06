@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+var Run = require('./utils/run');
+var CommanderWrapper = require('./utils/commander-wrapper');
+var config = require('./utils/get-config')();
+var PathsExist = require('./utils/paths-exist');
+var log = require('./utils/log');
+
+var program = CommanderWrapper(function(commander) {
+  return commander
+    .option('-w, --watch', 'watch files for changes and re-lint')
+    .option('-e, --errors', 'only log errors')
+    .option('-f, --fix', 'automatically fix semantic errors were possible');
+});
+
+var commands = [];
+
+['js', 'test', 'css', 'docs', 'lang'].forEach(function(buildName) {
+  if (config[buildName] === false || !config[buildName].src || config[buildName].lint === false) {
+    log.debug(buildName + ' linter is turned off in package.json.');
+  } else if (!PathsExist(config[buildName].src)) {
+    log.debug(buildName + ' linter will not run as src dir ' + config[buildName].src + ' does not exist.');
+  } else {
+    commands.push(['sb-lint-' + buildName + '-all']);
+  }
+});
+
+if (!commands) {
+  log.fatal('There is nothing to lint!');
+  process.exit(1);
+}
+
+
+commands = commands.map(function(command) {
+  if (program.errors) {
+    command.push('--errors');
+  }
+  if (program.watch) {
+    command.push('--watch');
+  }
+  if (program.fix) {
+    command.push('--fix');
+  }
+  return command;
+});
+
+Run.parallel(commands, {failAfter: true});

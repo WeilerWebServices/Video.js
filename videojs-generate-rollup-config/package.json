@@ -1,0 +1,64 @@
+{
+  "name": "videojs-generate-rollup-config",
+  "version": "5.0.2",
+  "description": "Generate a standard rollup config, so that plugins don't need the same script in every repository.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "vjsstandard",
+    "test": "npm run test:unit && npm run test:verify",
+    "test:unit": "npm run lint",
+    "test:verify": "vjsverify --skip-es-check --verbose",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "prepublishOnly": "npm run test:verify"
+  },
+  "lint-staged": {
+    "*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc",
+      "git add"
+    ]
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/videojs/videojs-generate-rollup-config"
+  },
+  "author": "Brandon Casey <brandonocasey@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-generate-rollup-config/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-generate-rollup-config",
+  "dependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-transform-object-assign": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-istanbul": "^2.0.1",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-multi-entry": "^2.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.1.1"
+  },
+  "peerDependencies": {
+    "rollup": "^1.12.0",
+    "@babel/runtime": "^7.9.2"
+  },
+  "devDependencies": {
+    "@videojs/generator-helpers": "^1.0.0",
+    "videojs-generator-verify": "~1.2.0",
+    "videojs-standard": "^8.0.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}
